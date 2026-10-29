@@ -6,48 +6,13 @@ pipeline {
         disableConcurrentBuilds()
     }
 
-    environment {
-        NODE_VERSION = '22.20.0'
-        DEPLOY_USER = "${env.DEPLOY_USER ?: 'deploy'}"
-        DEPLOY_PATH = "${env.DEPLOY_PATH ?: '/var/www/toddler'}"
-        SSH_CREDENTIALS = 'toddler-deploy'
-        PATH = "${WORKSPACE}/.node/bin:${env.PATH}"
-    }
-
     stages {
-        stage('Install') {
+        stage('Build image') {
             steps {
                 sh '''
-                    if ! command -v node >/dev/null 2>&1; then
-                        case "$(uname -m)" in
-                            x86_64) arch=x64 ;;
-                            aarch64|arm64) arch=arm64 ;;
-                            *) echo "Unsupported CPU: $(uname -m)" >&2; exit 1 ;;
-                        esac
-                        mkdir -p .node-tmp
-                        url="https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${arch}.tar.gz"
-                        if command -v curl >/dev/null 2>&1; then
-                            curl -fsSL "$url" -o .node-tmp/node.tar.gz
-                        elif command -v wget >/dev/null 2>&1; then
-                            wget -qO .node-tmp/node.tar.gz "$url"
-                        else
-                            echo "curl or wget is required to download Node.js" >&2
-                            exit 1
-                        fi
-                        tar -xzf .node-tmp/node.tar.gz -C .node-tmp
-                        rm -rf .node
-                        mv ".node-tmp/node-v${NODE_VERSION}-linux-${arch}" .node
-                        rm -rf .node-tmp
-                    fi
-                    node -v
-                    npm ci
+                    docker version
+                    docker build -t toddler:latest .
                 '''
-            }
-        }
-
-        stage('Build') {
-            steps {
-                sh 'npm run build'
             }
         }
 
@@ -58,60 +23,39 @@ pipeline {
             steps {
                 sh '''
                     set -eu
-                    publish() {
-                        dir="$1"
-                        echo "Publishing dist to ${dir}"
-                        mkdir -p "$dir"
-                        find "$dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-                        cp -a dist/. "$dir/"
-                        test -f "${dir}/index.html"
-                    }
+                    docker rm -f toddler || true
+                    docker run -d --name toddler --restart unless-stopped -p 5174:80 toddler:latest
+                    docker exec toddler wget -qO- http://127.0.0.1/ >/dev/null
+                    echo "Container is serving the site on port 80 inside Docker, published as host port 5174."
 
-                    if [ -n "${DEPLOY_HOST:-}" ]; then
-                        ssh -o StrictHostKeyChecking=accept-new "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
-                        rsync -az --delete dist/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
-                        echo "Published to ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+                    edge=$(docker ps --format '{{.ID}} {{.Ports}}' | awk '/:80->80/ {print $1; exit}')
+                    if [ -z "$edge" ]; then
+                        echo "No edge nginx container is publishing port 80."
+                        echo "Direct URL depends on the VPS firewall allowing TCP 5174."
                         exit 0
                     fi
 
-                    root=""
-                    if [ -d /etc/nginx ]; then
-                        root=$(grep -R --include='*.conf' -hE '^[[:space:]]*root[[:space:]]+' /etc/nginx 2>/dev/null | head -1 | awk '{print $2}' | tr -d ';' || true)
-                    fi
-                    if [ -z "$root" ]; then
-                        for candidate in /usr/share/nginx/html /var/www/html /var/www/toddler; do
-                            if [ -d "$candidate" ]; then
-                                root="$candidate"
-                                break
-                            fi
-                        done
-                    fi
-                    if [ -z "$root" ]; then
-                        root="/var/www/toddler"
-                    fi
-
-                    if [ -w "$root" ] || [ -w "$(dirname "$root")" ]; then
-                        publish "$root"
-                    elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
-                        sudo mkdir -p "$root"
-                        sudo find "$root" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
-                        sudo cp -a dist/. "$root/"
-                        sudo test -f "${root}/index.html"
-                        echo "Published dist to ${root}"
-                    else
-                        echo "Cannot write ${root}. The Jenkins user needs write access to the nginx site folder, or set DEPLOY_HOST." >&2
-                        echo "Port 5174 is not open on this server. Nginx is already answering on port 80." >&2
-                        exit 1
-                    fi
-                    echo "Open the site on port 80. Port 5174 is closed on this server."
+                    docker exec -i "$edge" sh -c 'cat > /etc/nginx/conf.d/61-toddler.conf' <<'EOF'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name 187.127.138.86;
+    location / {
+        proxy_pass http://host.docker.internal:5174;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+                    docker exec "$edge" nginx -t
+                    docker exec "$edge" nginx -s reload
+                    echo "http://187.127.138.86/ proxies to the toddler container."
+                    echo "http://187.127.138.86:5174/ works only after the VPS firewall allows TCP 5174."
                 '''
             }
-        }
-    }
-
-    post {
-        success {
-            archiveArtifacts artifacts: 'dist/**', fingerprint: true, onlyIfSuccessful: true
         }
     }
 }
