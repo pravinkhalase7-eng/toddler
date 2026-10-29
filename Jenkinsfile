@@ -56,18 +56,55 @@ pipeline {
                 branch 'main'
             }
             steps {
-                script {
-                    if (!env.DEPLOY_HOST?.trim()) {
-                        echo 'DEPLOY_HOST is not set. The site was built and archived, and was not copied to a server.'
-                        return
+                sh '''
+                    set -eu
+                    publish() {
+                        dir="$1"
+                        echo "Publishing dist to ${dir}"
+                        mkdir -p "$dir"
+                        find "$dir" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+                        cp -a dist/. "$dir/"
+                        test -f "${dir}/index.html"
                     }
-                    sshagent(credentials: [env.SSH_CREDENTIALS]) {
-                        sh '''
-                            ssh -o StrictHostKeyChecking=accept-new "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
-                            rsync -az --delete dist/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
-                        '''
-                    }
-                }
+
+                    if [ -n "${DEPLOY_HOST:-}" ]; then
+                        ssh -o StrictHostKeyChecking=accept-new "${DEPLOY_USER}@${DEPLOY_HOST}" "mkdir -p '${DEPLOY_PATH}'"
+                        rsync -az --delete dist/ "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/"
+                        echo "Published to ${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}"
+                        exit 0
+                    fi
+
+                    root=""
+                    if [ -d /etc/nginx ]; then
+                        root=$(grep -R --include='*.conf' -hE '^[[:space:]]*root[[:space:]]+' /etc/nginx 2>/dev/null | head -1 | awk '{print $2}' | tr -d ';' || true)
+                    fi
+                    if [ -z "$root" ]; then
+                        for candidate in /usr/share/nginx/html /var/www/html /var/www/toddler; do
+                            if [ -d "$candidate" ]; then
+                                root="$candidate"
+                                break
+                            fi
+                        done
+                    fi
+                    if [ -z "$root" ]; then
+                        root="/var/www/toddler"
+                    fi
+
+                    if [ -w "$root" ] || [ -w "$(dirname "$root")" ]; then
+                        publish "$root"
+                    elif command -v sudo >/dev/null 2>&1 && sudo -n true >/dev/null 2>&1; then
+                        sudo mkdir -p "$root"
+                        sudo find "$root" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+                        sudo cp -a dist/. "$root/"
+                        sudo test -f "${root}/index.html"
+                        echo "Published dist to ${root}"
+                    else
+                        echo "Cannot write ${root}. The Jenkins user needs write access to the nginx site folder, or set DEPLOY_HOST." >&2
+                        echo "Port 5174 is not open on this server. Nginx is already answering on port 80." >&2
+                        exit 1
+                    fi
+                    echo "Open the site on port 80. Port 5174 is closed on this server."
+                '''
             }
         }
     }
