@@ -1,3 +1,5 @@
 node_modules
 dist
+.node
+.node-tmp
 .DS_Store
