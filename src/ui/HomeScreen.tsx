@@ -38,6 +38,7 @@ export function HomeScreen({
   onSorter,
   onRhymes,
   onSpeech,
+  onPlayPark,
   onGrownups,
 }: {
   muted: boolean;
@@ -60,6 +61,7 @@ export function HomeScreen({
   onSorter: () => void;
   onRhymes: () => void;
   onSpeech: () => void;
+  onPlayPark: () => void;
   onGrownups: () => void;
 }) {
   const hold = useRef(0);
@@ -180,6 +182,10 @@ export function HomeScreen({
           <button type="button" className="shortcut" style={{ background: "#8b5cf6", color: "#fff" }} onClick={onRhymes}>
             <span>🎵</span>
             {ui("rhymes")}
+          </button>
+          <button type="button" className="shortcut" style={{ background: "#0ea5e9", color: "#fff" }} onClick={onPlayPark}>
+            <span>🎈</span>
+            {ui("playPark")}
           </button>
         </div>
       </section>

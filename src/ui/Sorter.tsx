@@ -4,10 +4,17 @@ import { shuffle } from "../data/helpers";
 import { ui } from "../i18n";
 import { awardStars } from "../progress";
 import type { ShapeName } from "../types";
-import { Mascot, TopBar } from "./Chrome";
+import { TopBar } from "./Chrome";
 import { ShapeIcon } from "./Picture";
 
 const shapes: ShapeName[] = ["circle", "square", "triangle", "rectangle", "star", "heart", "oval", "diamond", "pentagon", "hexagon"];
+
+function deal(previous: ShapeName[]) {
+  const rest = shapes.filter((shape) => !previous.includes(shape));
+  const pool = rest.length >= 4 ? rest : shapes;
+  const round = shuffle(pool).slice(0, 4);
+  return { round, holes: shuffle(round), tray: shuffle(round) };
+}
 
 export function SorterScreen({
   muted,
@@ -19,20 +26,23 @@ export function SorterScreen({
   onBack: () => void;
 }) {
   const boardRef = useRef<HTMLDivElement>(null);
-  const [holes, setHoles] = useState(() => shuffle(shapes));
-  const [tray, setTray] = useState(() => shuffle(shapes));
+  const [board, setBoard] = useState(() => deal([]));
   const [placed, setPlaced] = useState<ShapeName[]>([]);
   const [drag, setDrag] = useState<{ id: ShapeName; x: number; y: number } | null>(null);
   const [wrong, setWrong] = useState<ShapeName | null>(null);
-  const won = placed.length === shapes.length;
-  const celebrated = useRef(false);
+  const { round, holes, tray } = board;
 
   useEffect(() => {
-    if (!won || celebrated.current) return;
-    celebrated.current = true;
-    awardStars("Shape sorter", 1);
-    void playSuccess();
-  }, [won]);
+    if (placed.length !== round.length || round.length === 0) return;
+    const timer = window.setTimeout(() => {
+      awardStars("Shape sorter", 1);
+      void playSuccess();
+      setBoard((current) => deal(current.round));
+      setPlaced([]);
+      setDrag(null);
+    }, 700);
+    return () => window.clearTimeout(timer);
+  }, [placed, round]);
 
   function holeUnder(clientX: number, clientY: number) {
     const board = boardRef.current;
@@ -63,7 +73,7 @@ export function SorterScreen({
   }
 
   function startDrag(event: ReactPointerEvent<HTMLButtonElement>, id: ShapeName) {
-    if (placed.includes(id) || won) return;
+    if (placed.includes(id)) return;
     event.currentTarget.setPointerCapture(event.pointerId);
     setDrag({ id, x: event.clientX, y: event.clientY });
   }
@@ -71,8 +81,7 @@ export function SorterScreen({
   return (
     <main className="screen">
       <TopBar tint="#f97316" ink="#fff" emoji="🔷" title={ui("sorter")} onBack={onBack} muted={muted} onToggleMute={onToggleMute} />
-      <p className="intro">{won ? ui("sorterDone") : ui("sorterHint")}</p>
-      {won && <Mascot mood="jump" />}
+      <p className="intro">{ui("sorterHint")}</p>
       <div className="sorter-board" ref={boardRef}>
         <div className="sorter-tray">
           {tray.map((id) => (
@@ -105,20 +114,6 @@ export function SorterScreen({
         <div className="drag-ghost" style={{ left: drag.x, top: drag.y }}>
           <ShapeIcon shape={drag.id} className="shape-svg small" />
         </div>
-      )}
-      {won && (
-        <button
-          type="button"
-          className="primary"
-          onClick={() => {
-            celebrated.current = false;
-            setHoles(shuffle(shapes));
-            setTray(shuffle(shapes));
-            setPlaced([]);
-          }}
-        >
-          {ui("playAgain")}
-        </button>
       )}
     </main>
   );

@@ -16,6 +16,7 @@ import { RhymesScreen } from "./ui/Rhymes";
 import { SorterScreen } from "./ui/Sorter";
 import { SpeechLabScreen } from "./ui/SpeechLab";
 import { TutorScreen } from "./ui/Tutor";
+import { PlayParkScreen } from "./ui/PlayPark";
 import { PracticeView } from "./ui/Practice";
 
 type Screen =
@@ -40,7 +41,8 @@ type Screen =
   | { name: "tutor" }
   | { name: "sorter" }
   | { name: "rhymes" }
-  | { name: "speech" };
+  | { name: "speech" }
+  | { name: "playpark" };
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ name: "home" });
@@ -106,6 +108,7 @@ export function App() {
             onSorter={() => setScreen({ name: "sorter" })}
             onRhymes={() => setScreen({ name: "rhymes" })}
             onSpeech={() => setScreen({ name: "speech" })}
+            onPlayPark={() => setScreen({ name: "playpark" })}
             onGrownups={() => setScreen({ name: "grownups" })}
           />
         )}
@@ -170,6 +173,7 @@ export function App() {
         {screen.name === "sorter" && <SorterScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
         {screen.name === "rhymes" && <RhymesScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
         {screen.name === "speech" && <SpeechLabScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
+        {screen.name === "playpark" && <PlayParkScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
         {screen.name === "color" && (
           <ColorScreen
             scene={screen.scene}
