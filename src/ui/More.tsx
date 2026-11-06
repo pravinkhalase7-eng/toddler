@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { playCheer, playCue, speak } from "../audio";
 import { categories, findLesson } from "../data/catalog";
+import { traceGroups, type Stroke } from "../data/traces";
 import { ui, topicName } from "../i18n";
 import {
   addChild,
@@ -122,27 +123,6 @@ export function StickerScreen({
   );
 }
 
-type Stroke = [number, number][];
-
-function circleStroke(): Stroke {
-  const points: Stroke = [];
-  for (let i = 0; i <= 28; i += 1) {
-    const angle = (i / 28) * Math.PI * 2;
-    points.push([150 + Math.cos(angle) * 90, 150 + Math.sin(angle) * 90]);
-  }
-  return points;
-}
-
-const traces: { id: string; label: string; strokes: Stroke[] }[] = [
-  { id: "A", label: "A", strokes: [[[150, 40], [70, 250]], [[150, 40], [230, 250]], [[105, 155], [195, 155]]] },
-  { id: "B", label: "B", strokes: [[[80, 40], [80, 250]], [[80, 40], [170, 40], [190, 90], [80, 140]], [[80, 140], [180, 140], [200, 190], [80, 250]]] },
-  { id: "1", label: "1", strokes: [[[120, 80], [150, 40], [150, 250]], [[110, 250], [190, 250]]] },
-  { id: "2", label: "2", strokes: [[[90, 90], [140, 40], [200, 80], [90, 250], [210, 250]]] },
-  { id: "circle", label: "Circle", strokes: [circleStroke()] },
-  { id: "square", label: "Square", strokes: [[[70, 70], [230, 70], [230, 230], [70, 230], [70, 70]]] },
-  { id: "triangle", label: "Triangle", strokes: [[[150, 50], [250, 240], [50, 240], [150, 50]]] },
-];
-
 function densify(stroke: Stroke) {
   const out: Stroke = [];
   for (let i = 0; i < stroke.length - 1; i += 1) {
@@ -163,7 +143,9 @@ export function TraceScreen({
   onToggleMute: () => void;
   onBack: () => void;
 }) {
-  const [shape, setShape] = useState(traces[0]);
+  const [groupId, setGroupId] = useState(traceGroups[0].id);
+  const group = traceGroups.find((item) => item.id === groupId) ?? traceGroups[0];
+  const [shape, setShape] = useState(group.items[0]);
   const [user, setUser] = useState<Stroke>([]);
   const [done, setDone] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -218,7 +200,25 @@ export function TraceScreen({
       <TopBar tint="#ff8a5b" ink="#fff" emoji="✏️" title={ui("trace")} onBack={onBack} muted={muted} onToggleMute={onToggleMute} />
       <p className="intro">{done ? ui("traceDone") : ui("traceHint")}</p>
       <div className="shortcut-row">
-        {traces.map((item) => (
+        {traceGroups.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={`shortcut ${item.id === group.id ? "on" : ""}`}
+            onClick={() => {
+              setGroupId(item.id);
+              setShape(item.items[0]);
+              setUser([]);
+              userRef.current = [];
+              setDone(false);
+            }}
+          >
+            {topicName(item.label)}
+          </button>
+        ))}
+      </div>
+      <div className="shortcut-row trace-picks">
+        {group.items.map((item) => (
           <button
             key={item.id}
             type="button"

@@ -46,7 +46,19 @@ export const basic: Category = {
       "cards",
       "Every letter has a sound and a picture.",
       letters.map(([letter, emoji, word]) =>
-        bit(word, emoji, `${letter} is for ${word.toLowerCase()}.`, { letter, ask: `Tap the ${word.toLowerCase()}` }),
+        bit(word, emoji, `${letter} for ${word}. ${[...word].join(", ")}.`, { letter, ask: `Tap the ${word.toLowerCase()}` }),
+      ),
+    ),
+    lesson(
+      "Small Letters",
+      "🔤",
+      "cards",
+      "Small letters use the same pictures.",
+      letters.map(([letter, emoji, word]) =>
+        bit(word, emoji, `${letter.toLowerCase()} for ${word}. ${[...word].join(", ")}.`, {
+          letter: letter.toLowerCase(),
+          ask: `Tap the ${word.toLowerCase()}`,
+        }),
       ),
     ),
     lesson(
@@ -94,6 +106,12 @@ export const basic: Category = {
         bit("Heart", "❤️", "A heart shape means love.", { shape: "heart", ask: "Tap the heart" }),
         bit("Oval", "🥚", "An oval is a stretched circle, like an egg.", { shape: "oval", ask: "Tap the oval" }),
         bit("Diamond", "💎", "A diamond looks like a kite.", { shape: "diamond", ask: "Tap the diamond" }),
+        bit("Pentagon", "⬠", "A pentagon has five sides.", { shape: "pentagon", ask: "Tap the pentagon" }),
+        bit("Hexagon", "⬡", "A hexagon has six sides.", { shape: "hexagon", ask: "Tap the hexagon" }),
+        bit("Semicircle", "◐", "A semicircle is half a circle.", { shape: "semicircle", ask: "Tap the semicircle" }),
+        bit("Crescent", "🌙", "A crescent is a curved moon shape.", { shape: "crescent", ask: "Tap the crescent" }),
+        bit("Arrow", "➡️", "An arrow points the way.", { shape: "arrow", ask: "Tap the arrow" }),
+        bit("Cross", "➕", "A cross has a line up and a line across.", { shape: "cross", ask: "Tap the cross" }),
       ],
     ),
     lesson(

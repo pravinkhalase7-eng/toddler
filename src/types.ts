@@ -6,7 +6,13 @@ export type ShapeName =
   | "star"
   | "heart"
   | "oval"
-  | "diamond";
+  | "diamond"
+  | "pentagon"
+  | "hexagon"
+  | "semicircle"
+  | "crescent"
+  | "arrow"
+  | "cross";
 
 export type Cue =
   | "moo"

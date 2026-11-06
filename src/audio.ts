@@ -272,9 +272,74 @@ export function playCheer() {
 
 export async function playTryAgain() {
   if (muted) return;
-  tone(240, 0.12, "sine", 0.04);
-  await wait(100);
-  tone(180, 0.16, "sine", 0.035);
+  tone(196, 0.16, "square", 0.018);
+  await wait(70);
+  tone(146, 0.22, "sawtooth", 0.016);
+  await wait(40);
+  tone(110, 0.18, "square", 0.012);
+}
+
+type HeardRecognition = {
+  lang: string;
+  interimResults: boolean;
+  maxAlternatives: number;
+  onresult: ((event: { results: { [index: number]: { [index: number]: { transcript: string } } } }) => void) | null;
+  onerror: (() => void) | null;
+  onend: (() => void) | null;
+  start: () => void;
+  stop: () => void;
+};
+
+export function hearWord(ms = 5000) {
+  const speechWindow = window as Window & {
+    SpeechRecognition?: new () => HeardRecognition;
+    webkitSpeechRecognition?: new () => HeardRecognition;
+  };
+  const Ctor = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
+  if (!Ctor) return Promise.resolve("");
+  const rec = new Ctor();
+  const lang = getLang();
+  rec.lang = lang === "hi" ? "hi-IN" : lang === "mr" ? "mr-IN" : "en-US";
+  rec.interimResults = false;
+  rec.maxAlternatives = 4;
+  return new Promise<string>((resolve) => {
+    let text = "";
+    let settled = false;
+    const finish = (value: string) => {
+      if (settled) return;
+      settled = true;
+      window.clearTimeout(timer);
+      resolve(value);
+    };
+    const timer = window.setTimeout(() => {
+      try {
+        rec.stop();
+      } catch {
+        finish(text);
+      }
+    }, ms);
+    rec.onresult = (event) => {
+      const first = event.results[0];
+      text = first?.[0]?.transcript ?? "";
+    };
+    rec.onerror = () => finish("");
+    rec.onend = () => finish(text);
+    try {
+      rec.start();
+    } catch {
+      finish("");
+    }
+  });
+}
+
+export function saidWord(heard: string, word: string) {
+  const clean = (value: string) => value.toLowerCase().replace(/[^a-z0-9\u0900-\u097F]+/g, " ").trim();
+  const said = clean(heard);
+  const wanted = clean(word);
+  if (!said || !wanted) return false;
+  if (said === wanted || said.includes(wanted)) return true;
+  const piece = said.split(" ").find((part) => part.length > 1 && (wanted.startsWith(part) || part.startsWith(wanted.slice(0, 3))));
+  return Boolean(piece);
 }
 
 function utteranceLang(text: string) {

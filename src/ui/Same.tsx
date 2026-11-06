@@ -73,8 +73,8 @@ export function SameScreen({
     const next = matchedRef.current.flatMap((pair) => {
       const nodes = [...board.querySelectorAll<HTMLElement>(`[data-pair="${pair}"]`)];
       if (nodes.length < 2) return [];
-      const a = center(nodes[0], box);
-      const b = center(nodes[1], box);
+      const a = anchor(nodes[0], box);
+      const b = anchor(nodes[1], box);
       return [{ pair, x1: a.x, y1: a.y, x2: b.x, y2: b.y }];
     });
     setLines(next);
@@ -100,7 +100,7 @@ export function SameScreen({
     const board = boardRef.current;
     if (!board) return;
     const box = board.getBoundingClientRect();
-    const origin = center(tile, box);
+    const origin = anchor(tile, box);
     fromRef.current = { id: tile.dataset.id ?? "", pair: tile.dataset.pair ?? "", side: tile.dataset.side as Side };
     setFromId(tile.dataset.id ?? null);
     setDraft({ pair: "draft", x1: origin.x, y1: origin.y, x2: origin.x, y2: origin.y });
@@ -236,7 +236,9 @@ function PictureTile({
   );
 }
 
-function center(tile: HTMLElement, board: DOMRect) {
+function anchor(tile: HTMLElement, board: DOMRect) {
   const box = tile.getBoundingClientRect();
-  return { x: box.left - board.left + box.width / 2, y: box.top - board.top + box.height / 2 };
+  const y = box.top - board.top + box.height / 2;
+  const x = tile.dataset.side === "left" ? box.right - board.left + 16 : box.left - board.left - 16;
+  return { x, y };
 }

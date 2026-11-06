@@ -828,7 +828,8 @@ button.topic-row {
   position: relative;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  column-gap: 72px;
+  column-gap: clamp(108px, 28vw, 168px);
+  padding: 10px 4px 16px;
   touch-action: none;
   user-select: none;
 }
@@ -850,7 +851,7 @@ button.topic-row {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 20px;
 }
 .same-tile {
   min-height: 92px;
@@ -896,3 +897,96 @@ button.topic-row {
 }
 .color-dot.flash { box-shadow: 0 0 0 6px white, 0 6px 0 rgba(59, 42, 74, 0.12); transform: scale(1.06); }
 .color-dot.matched { box-shadow: 0 0 0 6px #22c55e, 0 6px 0 #86efac; }
+
+.trace-picks { max-height: 132px; overflow: auto; }
+.color-book {
+  position: relative;
+  width: min(100%, 360px);
+  align-self: center;
+  background: white;
+  border-radius: 28px;
+  touch-action: none;
+  box-shadow: 0 8px 0 rgba(59, 42, 74, 0.08);
+}
+.color-book canvas, .color-lines {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.color-lines {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.color-lines * {
+  fill: none;
+  stroke: #3b2a4a;
+  stroke-width: 4;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.tutor-card {
+  min-height: 220px;
+  border-radius: 28px;
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 8px 0 rgba(59, 42, 74, 0.08);
+}
+.tutor-card span { font-size: 6rem; line-height: 1; }
+.tutor-card p { margin: 0; font-size: 1.6rem; font-weight: 800; text-transform: capitalize; }
+.sorter-board {
+  position: relative;
+  min-height: 460px;
+  border-radius: 28px;
+  background: #fff7ed;
+  touch-action: none;
+}
+.sorter-holes {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+.shape-hole {
+  min-height: 84px;
+  border-radius: 20px;
+  border: 3px dashed #fdba74;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  opacity: 0.55;
+}
+.shape-piece {
+  position: absolute;
+  width: 92px;
+  height: 92px;
+  border: none;
+  border-radius: 24px;
+  background: white;
+  font-size: 3rem;
+  box-shadow: 0 6px 0 rgba(59, 42, 74, 0.1);
+  touch-action: none;
+}
+.shape-piece.placed { box-shadow: 0 0 0 4px #22c55e; }
+.rhyme-player {
+  position: relative;
+  width: 100%;
+  padding-top: 56%;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #1e1b4b;
+}
+.rhyme-player iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}

@@ -43,12 +43,12 @@ export const videos: Category = {
       "video",
       "A silly boy acts out each letter.",
       [
-        bit("Apple", "🍎", "A is for apple. He pretends to take a bite. Mmm!", { letter: "A" }),
-        bit("Ball", "⚽", "B is for ball. He bounce, bounce, bounces.", { letter: "B" }),
-        bit("Cat", "🐱", "C is for cat. He says meow and giggles.", { letter: "C", cue: "meow" }),
-        bit("Dog", "🐶", "D is for dog. He wags and says woof.", { letter: "D", cue: "bark" }),
-        bit("Elephant", "🐘", "E is for elephant. He swings a pretend trunk.", { letter: "E" }),
-        bit("Fish", "🐟", "F is for fish. He makes a splashy face.", { letter: "F", cue: "splash" }),
+        bit("Apple", "🍎", "A for apple. He pretends to take a bite. Mmm!", { letter: "A" }),
+        bit("Ball", "⚽", "B for ball. He bounce, bounce, bounces.", { letter: "B" }),
+        bit("Cat", "🐱", "C for cat. He says meow and giggles.", { letter: "C", cue: "meow" }),
+        bit("Dog", "🐶", "D for dog. He wags and says woof.", { letter: "D", cue: "bark" }),
+        bit("Elephant", "🐘", "E for elephant. He swings a pretend trunk.", { letter: "E" }),
+        bit("Fish", "🐟", "F for fish. He makes a splashy face.", { letter: "F", cue: "splash" }),
       ],
     ),
     lesson(

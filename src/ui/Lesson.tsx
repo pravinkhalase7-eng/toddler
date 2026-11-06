@@ -11,7 +11,11 @@ function labelOf(bit: Lesson["bits"][number]) {
 }
 
 function subOf(bit: Lesson["bits"][number]) {
-  if (bit.letter) return labelWord(bit.word);
+  if (bit.letter) {
+    const word = labelWord(bit.word);
+    const spelled = [...bit.word.replace(/[^A-Za-z]/g, "")].join(" ").toUpperCase();
+    return `${bit.letter} for ${word} · ${spelled}`;
+  }
   return bit.sub ? labelWord(bit.sub) : bit.sub;
 }
 

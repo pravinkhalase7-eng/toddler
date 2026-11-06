@@ -78,6 +78,46 @@ export function ShapeIcon({ shape, className = "shape-svg" }: { shape: ShapeName
           <Face />
         </svg>
       );
+    case "pentagon":
+      return (
+        <svg className={className} viewBox="0 0 120 120" aria-hidden>
+          <polygon points="60,12 108,46 90,104 30,104 12,46" fill="#f472b6" />
+          <Face />
+        </svg>
+      );
+    case "hexagon":
+      return (
+        <svg className={className} viewBox="0 0 120 120" aria-hidden>
+          <polygon points="60,12 102,36 102,84 60,108 18,84 18,36" fill="#34d399" />
+          <Face />
+        </svg>
+      );
+    case "semicircle":
+      return (
+        <svg className={className} viewBox="0 0 120 120" aria-hidden>
+          <path d="M16 70 A44 44 0 0 1 104 70 Z" fill="#fbbf24" />
+          <Face cy={62} />
+        </svg>
+      );
+    case "crescent":
+      return (
+        <svg className={className} viewBox="0 0 120 120" aria-hidden>
+          <path d="M78 18 A46 46 0 1 0 78 102 A32 32 0 1 1 78 18 Z" fill="#facc15" />
+        </svg>
+      );
+    case "arrow":
+      return (
+        <svg className={className} viewBox="0 0 120 120" aria-hidden>
+          <polygon points="16,48 72,48 72,28 108,60 72,92 72,72 16,72" fill="#60a5fa" />
+        </svg>
+      );
+    case "cross":
+      return (
+        <svg className={className} viewBox="0 0 120 120" aria-hidden>
+          <rect x="48" y="16" width="24" height="88" rx="8" fill="#fb7185" />
+          <rect x="16" y="48" width="88" height="24" rx="8" fill="#fb7185" />
+        </svg>
+      );
     default:
       return null;
   }

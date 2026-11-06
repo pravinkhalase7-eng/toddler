@@ -33,6 +33,11 @@ export function HomeScreen({
   onWhere,
   onSounds,
   onFlash,
+  onColorBook,
+  onTutor,
+  onSorter,
+  onRhymes,
+  onSpeech,
   onGrownups,
 }: {
   muted: boolean;
@@ -50,6 +55,11 @@ export function HomeScreen({
   onWhere: () => void;
   onSounds: () => void;
   onFlash: () => void;
+  onColorBook: () => void;
+  onTutor: () => void;
+  onSorter: () => void;
+  onRhymes: () => void;
+  onSpeech: () => void;
   onGrownups: () => void;
 }) {
   const hold = useRef(0);
@@ -144,6 +154,32 @@ export function HomeScreen({
           <button type="button" className="shortcut" style={{ background: "#f97316", color: "#fff" }} onClick={onFlash}>
             <span>🔴</span>
             {ui("flash")}
+          </button>
+        </div>
+      </section>
+
+      <section className="block">
+        <h2>{ui("speech")}</h2>
+        <div className="shortcut-row">
+          <button type="button" className="shortcut" style={{ background: "#0d9488", color: "#fff" }} onClick={onTutor}>
+            <span>🗣️</span>
+            {ui("tutor")}
+          </button>
+          <button type="button" className="shortcut" style={{ background: "#e85d8c", color: "#fff" }} onClick={onSpeech}>
+            <span>💬</span>
+            {ui("speech")}
+          </button>
+          <button type="button" className="shortcut" style={{ background: "#c77dff", color: "#fff" }} onClick={onColorBook}>
+            <span>🖍️</span>
+            {ui("colorBook")}
+          </button>
+          <button type="button" className="shortcut" style={{ background: "#f97316", color: "#fff" }} onClick={onSorter}>
+            <span>🔷</span>
+            {ui("sorter")}
+          </button>
+          <button type="button" className="shortcut" style={{ background: "#8b5cf6", color: "#fff" }} onClick={onRhymes}>
+            <span>🎵</span>
+            {ui("rhymes")}
           </button>
         </div>
       </section>

@@ -11,6 +11,11 @@ import { MemoryScreen } from "./ui/Memory";
 import { FlashScreen, OddScreen, SoundsScreen, WhereScreen } from "./ui/Recall";
 import { SameScreen } from "./ui/Same";
 import { BedtimeScreen, BuildScreen, ColorScreen, GrownupsScreen, PlayroomScreen, RestOverlay, StickerScreen, TraceScreen } from "./ui/More";
+import { ColorBookScreen } from "./ui/ColorBook";
+import { RhymesScreen } from "./ui/Rhymes";
+import { SorterScreen } from "./ui/Sorter";
+import { SpeechLabScreen } from "./ui/SpeechLab";
+import { TutorScreen } from "./ui/Tutor";
 import { PracticeView } from "./ui/Practice";
 
 type Screen =
@@ -30,7 +35,12 @@ type Screen =
   | { name: "sounds" }
   | { name: "flash" }
   | { name: "grownups" }
-  | { name: "color"; scene: string; from: string; bedtime?: boolean };
+  | { name: "color"; scene: string; from: string; bedtime?: boolean }
+  | { name: "colorbook" }
+  | { name: "tutor" }
+  | { name: "sorter" }
+  | { name: "rhymes" }
+  | { name: "speech" };
 
 export function App() {
   const [screen, setScreen] = useState<Screen>({ name: "home" });
@@ -91,6 +101,11 @@ export function App() {
             onWhere={() => setScreen({ name: "where" })}
             onSounds={() => setScreen({ name: "sounds" })}
             onFlash={() => setScreen({ name: "flash" })}
+            onColorBook={() => setScreen({ name: "colorbook" })}
+            onTutor={() => setScreen({ name: "tutor" })}
+            onSorter={() => setScreen({ name: "sorter" })}
+            onRhymes={() => setScreen({ name: "rhymes" })}
+            onSpeech={() => setScreen({ name: "speech" })}
             onGrownups={() => setScreen({ name: "grownups" })}
           />
         )}
@@ -150,6 +165,11 @@ export function App() {
         {screen.name === "sounds" && <SoundsScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
         {screen.name === "flash" && <FlashScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
         {screen.name === "grownups" && <GrownupsScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
+        {screen.name === "colorbook" && <ColorBookScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
+        {screen.name === "tutor" && <TutorScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
+        {screen.name === "sorter" && <SorterScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
+        {screen.name === "rhymes" && <RhymesScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
+        {screen.name === "speech" && <SpeechLabScreen muted={muted} onToggleMute={toggleMute} onBack={() => setScreen({ name: "home" })} />}
         {screen.name === "color" && (
           <ColorScreen
             scene={screen.scene}
