@@ -249,6 +249,37 @@ export async function playSuccess() {
   }
 }
 
+function clapAt(when: number) {
+  const audio = getCtx();
+  if (!audio || muted) return;
+  const dur = 0.08;
+  const length = Math.max(1, Math.floor(audio.sampleRate * dur));
+  const buffer = audio.createBuffer(1, length, audio.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < length; i += 1) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (audio.sampleRate * 0.012));
+  const source = audio.createBufferSource();
+  source.buffer = buffer;
+  const filter = audio.createBiquadFilter();
+  filter.type = "bandpass";
+  filter.frequency.value = 1200 + Math.random() * 800;
+  filter.Q.value = 0.8;
+  const gain = audio.createGain();
+  gain.gain.setValueAtTime(0.0001, when);
+  gain.gain.exponentialRampToValueAtTime(0.2, when + 0.006);
+  gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+  source.connect(filter);
+  filter.connect(gain);
+  gain.connect(audio.destination);
+  source.start(when);
+}
+
+export function playClap() {
+  const audio = getCtx();
+  if (!audio || muted) return;
+  const start = audio.currentTime;
+  for (const gap of [0, 0.11, 0.22, 0.34, 0.47, 0.6]) clapAt(start + gap);
+}
+
 export function playCheer() {
   if (muted) return;
   const id = session;

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { listenForSound, playBit, playCheer, playSuccess, speak, stopAudio } from "../audio";
+import { listenForSound, playBit, playCheer, playCue, playNotes, playSuccess, speak, stopAudio } from "../audio";
 import { labelWord, speechFor, topicName, ui } from "../i18n";
 import { awardStars, isFavorite, markOpened, toggleFavorite } from "../progress";
 import type { Category, Lesson } from "../types";
@@ -17,6 +17,11 @@ function subOf(bit: Lesson["bits"][number]) {
     return `${bit.letter} for ${word} · ${spelled}`;
   }
   return bit.sub ? labelWord(bit.sub) : bit.sub;
+}
+
+function nameOf(bit: Lesson["bits"][number]) {
+  if (bit.letter) return `${bit.letter} for ${labelWord(bit.word)}`;
+  return labelWord(bit.word);
 }
 
 export function LessonView({
@@ -53,8 +58,18 @@ export function LessonView({
   const bit = lesson.bits[index];
   const raw = sideLine?.index === index ? sideLine.text : (bit?.say ?? "");
   const hint = sideLine?.index === index ? sideLine.hint : bit?.word;
-  const line = speechFor(raw, hint).text;
+  const line = lesson.layout === "cards" ? (bit ? nameOf(bit) : "") : speechFor(raw, hint).text;
   indexRef.current = index;
+
+  async function playShown(item: Lesson["bits"][number]) {
+    if (lesson.layout !== "cards") {
+      await playBit(item);
+      return;
+    }
+    if (item.cue) await playCue(item.cue);
+    if (item.notes?.length) await playNotes(item.notes);
+    await speak(nameOf(item));
+  }
 
   useEffect(() => {
     markOpened(lesson.title);
@@ -62,7 +77,7 @@ export function LessonView({
 
   useEffect(() => {
     if (done || lesson.layout === "video" || controlled.current || !bit) return;
-    void playBit(bit);
+    void playShown(bit);
     return () => {
       if (!controlled.current) stopAudio();
     };
@@ -114,7 +129,7 @@ export function LessonView({
     stopAudio();
     setSideLine(null);
     setListen("off");
-    void playBit(bit);
+    void playShown(bit);
   }
 
   async function sayWithMe() {
@@ -124,7 +139,7 @@ export function LessonView({
     setListen("wait");
     setSideLine(null);
     stopAudio();
-    await playBit(bit);
+    await playShown(bit);
     if (run.current !== my) return;
     const heard = await listenForSound(2200);
     if (run.current !== my) return;
@@ -244,7 +259,7 @@ export function LessonView({
             </div>
             <h2 className="word">{labelOf(bit)}</h2>
             {subOf(bit) && <p className="subhead">{subOf(bit)}</p>}
-            <p className="bubble">{line}</p>
+            {lesson.layout !== "cards" && <p className="bubble">{line}</p>}
             {lesson.bits.length > 12 ? (
               <p className="counter">
                 {index + 1} / {lesson.bits.length}

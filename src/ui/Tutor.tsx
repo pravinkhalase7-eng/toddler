@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { hearWord, playCheer, playSuccess, playTryAgain, saidWord, speak, stopAudio } from "../audio";
+import { hearWord, playClap, playSuccess, playTryAgain, saidWord, speak, stopAudio } from "../audio";
 import { shuffle } from "../data/helpers";
 import { ui } from "../i18n";
 import { awardStars } from "../progress";
@@ -54,7 +54,7 @@ export function TutorScreen({
     setHeard(said);
     if (saidWord(said, item.word)) {
       setPhase("yes");
-      playCheer();
+      playClap();
       await speak(`${ui("yes")} ${item.word}.`);
       window.setTimeout(() => setIndex((value) => value + 1), 900);
       return;

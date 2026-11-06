@@ -3,27 +3,11 @@ import { playCheer, playSuccess, playTryAgain, speak } from "../audio";
 import { shuffle } from "../data/helpers";
 import { ui } from "../i18n";
 import { awardStars } from "../progress";
+import type { ShapeName } from "../types";
 import { Mascot, TopBar } from "./Chrome";
+import { ShapeIcon } from "./Picture";
 
-type ShapeId = "circle" | "square" | "triangle" | "star";
-
-const shapes: { id: ShapeId; emoji: string }[] = [
-  { id: "circle", emoji: "⭕" },
-  { id: "square", emoji: "🟦" },
-  { id: "triangle", emoji: "🔺" },
-  { id: "star", emoji: "⭐" },
-];
-
-type Piece = { id: ShapeId; emoji: string; x: number; y: number; placed: boolean };
-
-function fresh(): Piece[] {
-  return shuffle(shapes).map((shape, index) => ({
-    ...shape,
-    x: 16 + (index % 2) * 150,
-    y: 16 + Math.floor(index / 2) * 110,
-    placed: false,
-  }));
-}
+const shapes: ShapeName[] = ["circle", "square", "triangle", "rectangle", "star", "heart", "oval", "diamond", "pentagon", "hexagon"];
 
 export function SorterScreen({
   muted,
@@ -35,10 +19,12 @@ export function SorterScreen({
   onBack: () => void;
 }) {
   const boardRef = useRef<HTMLDivElement>(null);
-  const drag = useRef<{ id: ShapeId; dx: number; dy: number } | null>(null);
-  const [pieces, setPieces] = useState(fresh);
-  const [wrong, setWrong] = useState<ShapeId | null>(null);
-  const won = pieces.every((piece) => piece.placed);
+  const [holes, setHoles] = useState(() => shuffle(shapes));
+  const [tray, setTray] = useState(() => shuffle(shapes));
+  const [placed, setPlaced] = useState<ShapeName[]>([]);
+  const [drag, setDrag] = useState<{ id: ShapeName; x: number; y: number } | null>(null);
+  const [wrong, setWrong] = useState<ShapeName | null>(null);
+  const won = placed.length === shapes.length;
   const celebrated = useRef(false);
 
   useEffect(() => {
@@ -48,46 +34,38 @@ export function SorterScreen({
     void playSuccess();
   }, [won]);
 
-  function holeCenter(id: ShapeId) {
+  function holeUnder(clientX: number, clientY: number) {
     const board = boardRef.current;
-    const hole = board?.querySelector<HTMLElement>(`[data-hole="${id}"]`);
-    if (!board || !hole) return null;
-    const box = board.getBoundingClientRect();
-    const target = hole.getBoundingClientRect();
-    return { x: target.left - box.left + 8, y: target.top - box.top + 8, cx: target.left + target.width / 2, cy: target.top + target.height / 2 };
-  }
-
-  function move(event: ReactPointerEvent<HTMLElement>) {
-    const active = drag.current;
-    const board = boardRef.current;
-    if (!active || !board) return;
-    const box = board.getBoundingClientRect();
-    setPieces((current) =>
-      current.map((piece) => (piece.id === active.id ? { ...piece, x: event.clientX - box.left - active.dx, y: event.clientY - box.top - active.dy } : piece)),
+    if (!board) return null;
+    const nodes = [...board.querySelectorAll<HTMLElement>("[data-hole]")];
+    return (
+      nodes.find((node) => {
+        const box = node.getBoundingClientRect();
+        return clientX >= box.left && clientX <= box.right && clientY >= box.top && clientY <= box.bottom;
+      }) ?? null
     );
   }
 
-  function drop(event: ReactPointerEvent<HTMLElement>) {
-    const active = drag.current;
-    drag.current = null;
-    if (!active) return;
-    const hole = holeCenter(active.id);
-    const near = hole && Math.hypot(event.clientX - hole.cx, event.clientY - hole.cy) < 70;
-    if (near && hole) {
-      setPieces((current) => current.map((piece) => (piece.id === active.id ? { ...piece, x: hole.x, y: hole.y, placed: true } : piece)));
+  function drop(clientX: number, clientY: number) {
+    if (!drag) return;
+    const id = drag.id;
+    setDrag(null);
+    const hole = holeUnder(clientX, clientY);
+    if (hole?.dataset.hole === id) {
+      setPlaced((current) => [...current, id]);
       playCheer();
       void speak(ui("yes"));
       return;
     }
-    setWrong(active.id);
+    setWrong(id);
     void playTryAgain();
-    window.setTimeout(() => setWrong(null), 400);
-    setPieces((current) => {
-      const index = shapes.findIndex((shape) => shape.id === active.id);
-      return current.map((piece) =>
-        piece.id === active.id ? { ...piece, x: 16 + (index % 2) * 150, y: 16 + Math.floor(index / 2) * 110, placed: false } : piece,
-      );
-    });
+    window.setTimeout(() => setWrong(null), 450);
+  }
+
+  function startDrag(event: ReactPointerEvent<HTMLButtonElement>, id: ShapeName) {
+    if (placed.includes(id) || won) return;
+    event.currentTarget.setPointerCapture(event.pointerId);
+    setDrag({ id, x: event.clientX, y: event.clientY });
   }
 
   return (
@@ -96,40 +74,47 @@ export function SorterScreen({
       <p className="intro">{won ? ui("sorterDone") : ui("sorterHint")}</p>
       {won && <Mascot mood="jump" />}
       <div className="sorter-board" ref={boardRef}>
+        <div className="sorter-tray">
+          {tray.map((id) => (
+            <button
+              key={id}
+              type="button"
+              className={`shape-piece ${placed.includes(id) ? "gone" : ""} ${wrong === id ? "shake" : ""}`}
+              aria-label={id}
+              onPointerDown={(event) => startDrag(event, id)}
+              onPointerMove={(event) => {
+                if (!drag || drag.id !== id) return;
+                setDrag({ id, x: event.clientX, y: event.clientY });
+              }}
+              onPointerUp={(event) => drop(event.clientX, event.clientY)}
+              onPointerCancel={() => setDrag(null)}
+            >
+              {!placed.includes(id) && <ShapeIcon shape={id} className="shape-svg small" />}
+            </button>
+          ))}
+        </div>
         <div className="sorter-holes">
-          {shapes.map((shape) => (
-            <div key={shape.id} className="shape-hole" data-hole={shape.id} aria-label={shape.id}>
-              <span>{shape.emoji}</span>
+          {holes.map((id) => (
+            <div key={id} className={`shape-hole ${placed.includes(id) ? "filled" : ""}`} data-hole={id} aria-label={id}>
+              <ShapeIcon shape={id} className={`shape-svg small ${placed.includes(id) ? "" : "as-hole"}`} />
             </div>
           ))}
         </div>
-        {pieces.map((piece) => (
-          <button
-            key={piece.id}
-            type="button"
-            className={`shape-piece ${piece.placed ? "placed" : ""} ${wrong === piece.id ? "shake" : ""}`}
-            style={{ left: piece.x, top: piece.y }}
-            onPointerDown={(event) => {
-              if (piece.placed || won) return;
-              const box = event.currentTarget.getBoundingClientRect();
-              drag.current = { id: piece.id, dx: event.clientX - box.left, dy: event.clientY - box.top };
-              event.currentTarget.setPointerCapture(event.pointerId);
-            }}
-            onPointerMove={move}
-            onPointerUp={drop}
-            onPointerCancel={drop}
-          >
-            {piece.emoji}
-          </button>
-        ))}
       </div>
+      {drag && (
+        <div className="drag-ghost" style={{ left: drag.x, top: drag.y }}>
+          <ShapeIcon shape={drag.id} className="shape-svg small" />
+        </div>
+      )}
       {won && (
         <button
           type="button"
           className="primary"
           onClick={() => {
             celebrated.current = false;
-            setPieces(fresh());
+            setHoles(shuffle(shapes));
+            setTray(shuffle(shapes));
+            setPlaced([]);
           }}
         >
           {ui("playAgain")}
